@@ -228,37 +228,50 @@ fn ler_uso() -> HashMap<String, u32> {
     mapa
 }
 
-pub fn calcular(texto: &str) -> Option<f64> {
+pub fn calcular(texto: &str) -> Option<String> {
     let expr = texto.replace('×', "*").replace('÷', "/").replace(',', ".");
     let expr = expr.trim();
 
     let tem_numero = expr.chars().any(|c| c.is_ascii_digit());
-
     if !tem_numero {
         return None;
     }
 
     let tem_operador = expr.chars().any(|c| "+-*/^()".contains(c));
+    let mut val = None;
 
     if tem_operador {
-        if let Ok(val) = meval::eval_str(expr) {
-            return Some(val);
+        if let Ok(v) = meval::eval_str(expr) {
+            val = Some(v);
         } else {
             let partes: Vec<&str> = expr.split(|c| "+-*/^()".contains(c)).collect();
             if let Some(primeiro) = partes.first() {
-                if let Ok(val) = primeiro.trim().parse::<f64>() {
-                    return Some(val);
+                if let Ok(v) = primeiro.trim().parse::<f64>() {
+                    val = Some(v);
                 }
             }
-            return None;
         }
     } else {
-        if let Ok(val) = expr.parse::<f64>() {
-            return Some(val);
+        if let Ok(v) = expr.parse::<f64>() {
+            val = Some(v);
         }
     }
 
-    None
+    if let Some(v) = val {
+        let resultado_str = if v.fract() == 0.0 {
+            format!("{}", v as i64)
+        } else {
+            let s = format!("{}", v);
+            if texto.contains(',') {
+                s.replace('.', ",")
+            } else {
+                s
+            }
+        };
+        Some(resultado_str)
+    } else {
+        None
+    }
 }
 
 pub fn registrar_uso(nome: &str) {
@@ -291,31 +304,16 @@ pub fn filtrar(texto: &str) -> Vec<App> {
 
     res.truncate(15);
 
-    let comeca_com_numero = texto
-        .trim_start()
-        .chars()
-        .next()
-        .map_or(false, |c| c.is_ascii_digit());
-
-    if let Some(resultado) = calcular(texto) {
-        let texto_res = if resultado.fract() == 0.0 {
-            format!("{}", resultado as i64)
-        } else {
-            format!("{}", resultado)
-        };
-
+    if let Some(texto_res) = calcular(texto) {
+        // Ele insere a calculadora no topo exibindo o texto do jeito que o usuário digitou
         res.insert(
             0,
             App {
                 nome: format!("{} = {}", texto.trim(), texto_res),
                 icone: "accessories-calculator".to_string(),
-                exec: format!("sh -c \"echo -n '{}' | wl-copy\"", texto_res),
+                exec: format!("sh -c \"echo -n '{}' | wl-copy\"", texto_res), // Copia o resultado limpo
             },
         );
-
-        if comeca_com_numero {
-            res.truncate(10);
-        }
     } else if res.is_empty() && !texto.trim().is_empty() {
         res.push(App {
             nome: texto.to_string(),
