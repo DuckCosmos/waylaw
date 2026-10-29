@@ -229,15 +229,21 @@ fn ler_uso() -> HashMap<String, u32> {
 }
 
 pub fn calcular(texto: &str) -> Option<String> {
-    let expr = texto.replace('×', "*").replace('÷', "/").replace(',', ".");
+    let expr = texto
+        .replace('x', "*")
+        .replace('X', "*")
+        .replace('×', "*")
+        .replace('÷', "/")
+        .replace(',', ".");
+
     let expr = expr.trim();
 
-    let tem_numero = expr.chars().any(|c| c.is_ascii_digit());
-    if !tem_numero {
+    if !expr.chars().any(|c| c.is_ascii_digit()) {
         return None;
     }
 
     let tem_operador = expr.chars().any(|c| "+-*/^()".contains(c));
+
     let mut val = None;
 
     if tem_operador {
@@ -256,7 +262,6 @@ pub fn calcular(texto: &str) -> Option<String> {
             val = Some(v);
         }
     }
-
     if let Some(v) = val {
         let resultado_str = if v.fract() == 0.0 {
             format!("{}", v as i64)
@@ -273,7 +278,6 @@ pub fn calcular(texto: &str) -> Option<String> {
         None
     }
 }
-
 pub fn registrar_uso(nome: &str) {
     let mut uso = ler_uso();
     *uso.entry(nome.to_string()).or_insert(0) += 1;
