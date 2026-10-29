@@ -16,7 +16,7 @@ window {
 }
 
 .caixa {
-    background: alpha(@window_bg_color, 0.95);
+    background: alpha(@window_bg_color, 0.5);
     border-radius: 16px;
     border: 1px solid alpha(@window_fg_color, 0.1);
     padding: 20px;
