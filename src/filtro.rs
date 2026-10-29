@@ -228,6 +228,19 @@ fn ler_uso() -> HashMap<String, u32> {
     mapa
 }
 
+pub fn calcular(texto: &str) -> Option<f64> {
+    let expr = texto.replace('×', "*").replace('÷', "/").replace(',', ".");
+
+    let tem_numero = expr.chars().any(|c| c.is_ascii_digit());
+    let tem_operador = expr.chars().any(|c| "+-*/^()".contains(c));
+
+    if tem_numero && tem_operador {
+        meval::eval_str(&expr).ok()
+    } else {
+        None
+    }
+}
+
 pub fn registrar_uso(nome: &str) {
     let mut uso = ler_uso();
     *uso.entry(nome.to_string()).or_insert(0) += 1;
@@ -258,13 +271,29 @@ pub fn filtrar(texto: &str) -> Vec<App> {
 
     res.truncate(15);
 
-    if res.is_empty() && !texto.trim().is_empty() {
+    if let Some(resultado) = calcular(texto) {
+        let texto_res = if resultado.fract() == 0.0 {
+            format!("{}", resultado as i64)
+        } else {
+            format!("{}", resultado)
+        };
+
+        res.insert(
+            0,
+            App {
+                nome: format!("{} = {}", texto.trim(), texto_res),
+                icone: "accessories-calculator".to_string(),
+                exec: format!("sh -c \"echo -n '{}' | wl-copy\"", texto_res),
+            },
+        );
+    } else if res.is_empty() && !texto.trim().is_empty() {
         res.push(App {
             nome: texto.to_string(),
             icone: icone_shell(),
             exec: texto.to_string(),
         });
     }
+
     res
 }
 
